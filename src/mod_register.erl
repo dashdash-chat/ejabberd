@@ -393,10 +393,9 @@ send_registration_notifications(UJID, Source) ->
 	JIDs when is_list(JIDs) ->
 	    Body = lists:flatten(
 		     io_lib:format(
-		       "[~s] The account ~s was registered from IP address ~s "
-		       "on node ~w using ~p.",
+		       "[~s] The account ~s was registered~s on node ~w using ~p.",
 		       [get_time_string(), jlib:jid_to_string(UJID),
-			ip_to_string(Source), node(), ?MODULE])),
+			user_or_ip_to_string(Source), node(), ?MODULE])),
 	    lists:foreach(
 	      fun(S) ->
 		      case jlib:string_to_jid(S) of
@@ -414,8 +413,6 @@ send_registration_notifications(UJID, Source) ->
 	    ok
     end.
 
-check_from(#jid{user = "", server = ""}, _Server) ->
-    allow;
 check_from(JID, Server) ->
     Access = gen_mod:get_module_opt(Server, ?MODULE, access_from, none),
     acl:match_rule(Server, Access, JID).
@@ -509,9 +506,12 @@ remove_timeout(Source) ->
 	    ok
     end.
 
-ip_to_string(Source) when is_tuple(Source) -> inet_parse:ntoa(Source);
-ip_to_string(undefined) -> "undefined";
-ip_to_string(_) -> "unknown".
+user_or_ip_to_string({User, Host, Resource} = Source) when is_tuple(Source), size(Source) =:= 3 ->
+	lists:flatten(io_lib:format(" by user ~s@~s/~s", [User, Host, Resource]));
+user_or_ip_to_string(Source) when is_tuple(Source) ->
+	lists:flatten(io_lib:format(" from IP address ~s", [inet_parse:ntoa(Source)]));
+user_or_ip_to_string(undefined) -> "undefined";
+user_or_ip_to_string(_) -> "unknown".
 
 get_time_string() -> write_time(erlang:localtime()).
 %% Function copied from ejabberd_logger_h.erl and customized
