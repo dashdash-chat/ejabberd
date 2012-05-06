@@ -325,14 +325,16 @@ try_register(User, Server, Password, SourceRaw, Lang) ->
 	_ ->
 	    JID = jlib:make_jid(User, Server, ""),
 	    Access = gen_mod:get_module_opt(Server, ?MODULE, access, all),
+	    IPCheckExempt = gen_mod:get_module_opt(Server, ?MODULE, ip_check_exempt, deny),
 	    IPAccess = get_ip_access(Server),
 	    case {acl:match_rule(Server, Access, JID),
+		  acl:match_rule(Server, IPCheckExempt, JID),
 		  check_ip_access(SourceRaw, IPAccess)} of
-		{deny, _} ->
+		{deny, _, _} ->
 		    {error, ?ERR_FORBIDDEN};
-		{_, deny} ->
+		{_, deny, deny} ->
 		    {error, ?ERR_FORBIDDEN};
-		{allow, allow} ->
+		{allow, _, _} -> % continue ONLY if the first is allow and either the second or third is also allow
 		    Source = may_remove_resource(SourceRaw),
 		    case check_timeout(Source) of
 			true ->
