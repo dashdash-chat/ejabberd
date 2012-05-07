@@ -1396,8 +1396,21 @@ handle_info({route, From, To, Packet}, StateName, StateData) ->
 	    Attrs2 = jlib:replace_from_to_attrs(jlib:jid_to_string(From),
 						jlib:jid_to_string(To),
 						NewAttrs),
-	    FixedPacket = {xmlelement, Name, Attrs2, Els},
-	    send_element(StateData, FixedPacket),
+		FixedPacket = {xmlelement, Name, Attrs2, Els},
+		%% make a variable here to check the acl and do allow/deny and do nothing on deny/subscribe
+		?WARNING_MSG("hrm Attrs: ~p", [Attrs]),
+		case xml:get_attr_s("type", Attrs) of
+		    "subscribe" ->
+				?WARNING_MSG("sending back subscribed! pre-switch To:~p, From:~p~n", [To, From]),
+				send_presence(To, From, "subscribed"), % note that To and From are switched here
+				send_presence(To, From, "subscribe"); % note that To and From are switched here
+				%% don't forget the nickname!
+				% 		    [{"to", "proxy@localhost"}, {"type","subscribed"}] ->
+				% ?WARNING_MSG("StateName: ~p, NewState: ~p", [StateName, NewState]),
+				% ?WARNING_MSG("StateData: ~p, FixedPacket: ~p~n", [StateData, FixedPacket]);
+			_ -> 
+				send_element(StateData, FixedPacket)
+		end,
 	    ejabberd_hooks:run(user_receive_packet,
 			       StateData#state.server,
 			       [StateData#state.jid, From, To, FixedPacket]),
@@ -2383,3 +2396,14 @@ pack_string(String, Pack) ->
         none ->
             {String, gb_trees:insert(String, String, Pack)}
     end.
+
+%%%----------------------------------------------------------------------
+%%% Helper functions for automatically accepting subscription requests
+%%%----------------------------------------------------------------------
+
+%% from http://anders.conbere.org/blog/2008/08/06/building_ejabberd_modules_-_part_4_-_xmpp_bots/
+send_presence(From, To, "") ->
+    ejabberd_router:route(From, To, {xmlelement, "presence", [], []});
+
+send_presence(From, To, TypeStr) ->
+    ejabberd_router:route(From, To, {xmlelement, "presence", [{"type", TypeStr}], []}).
