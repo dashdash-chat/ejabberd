@@ -443,10 +443,19 @@ get_roster_by_jid_t(LUser, LServer, LJID, odbc) ->
             end
     end.
 
+check_from(JID, Server) ->
+	Access = gen_mod:get_module_opt(Server, ?MODULE, access, none),
+	acl:match_rule(Server, Access, JID).
+
 process_iq_set(From, To, #iq{sub_el = SubEl} = IQ) ->
     {xmlelement, _Name, _Attrs, Els} = SubEl,
-    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
-    IQ#iq{type = result, sub_el = []}.
+    case check_from(From, From#jid.server) of
+	allow ->
+	    lists:foreach(fun(El) -> process_item_set(From, To, El) end, Els),
+	    IQ#iq{type = result, sub_el = []};
+	deny ->
+	    IQ#iq{type = error, sub_el = [SubEl, ?ERR_FORBIDDEN]}
+	end.
 
 process_item_set(From, To, {xmlelement, _Name, Attrs, Els}) ->
     JID1 = jlib:string_to_jid(xml:get_attr_s("jid", Attrs)),
