@@ -1880,18 +1880,22 @@ presence_track(From, To, Packet, StateData) ->
 
 check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	%% in addition to the normal privacy rules, either the sender or recipient has to be an approved bot
+	{xmlelement, Name, Attrs, _Els} = Packet,
 	case {privacy_check_packet(StateData, From, To, Packet, out),
 		acl:match_rule(StateData#state.server, bots_only, From),
-		acl:match_rule(StateData#state.server, bots_only, To)} of
-	{allow, allow, allow} ->
+		acl:match_rule(StateData#state.server, bots_only, To),
+		xml:get_attr_s("type", Attrs)} of
+	{allow, allow, allow, _} ->
 	    ejabberd_router:route(FromRoute, To, Packet);
-	{allow, allow, deny} ->
+	{allow, allow, deny, _} ->
 	    ejabberd_router:route(FromRoute, To, Packet);
-	{allow, deny, allow} ->
+	{allow, deny, allow, _} ->
 	    ejabberd_router:route(FromRoute, To, Packet);
-	{_, _, _} ->
+	{allow, deny, deny, "get"} ->
+	    ejabberd_router:route(FromRoute, To, Packet);
+	{_, _, _, _} ->  %% {deny, deny, deny, _}
 	    Lang = StateData#state.lang,
-	    ErrText = "Your active privacy list has denied the routing of this stanza.",
+	    ErrText = "Either your active privacy list has denied the routing of this stanza, or the server is configured to reject this stanza.",
 	    Err = jlib:make_error_reply(Packet, ?ERRT_NOT_ACCEPTABLE(Lang, ErrText)),
 	    ejabberd_router:route(To, From, Err),
 	    ok
