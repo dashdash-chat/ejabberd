@@ -381,11 +381,8 @@ check_auth(noauth) ->
     no_auth_provided;
 check_auth({User, Server, Password}) ->
     %% Check the account exists and password is valid
-    AccountPass = ejabberd_auth:get_password_s(User, Server),
-    AccountPassMD5 = get_md5(AccountPass),
-    case Password of
-	AccountPass -> {ok, User, Server};
-	AccountPassMD5 -> {ok, User, Server};
+    case ejabberd_auth:check_password(User, Server, Password) of
+	true -> {ok, User, Server};
 	_ -> throw({error, invalid_account_data})
     end.
 
