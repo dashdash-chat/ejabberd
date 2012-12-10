@@ -1893,6 +1893,8 @@ check_privacy_route(From, StateData, FromRoute, To, Packet) ->
 	    ejabberd_router:route(FromRoute, To, Packet);
 	{allow, deny, deny, "get"} ->
 	    ejabberd_router:route(FromRoute, To, Packet);
+	{allow, deny, deny, "result"} ->
+	    ejabberd_router:route(FromRoute, To, Packet);
 	{_, _, _, _} ->  %% {deny, deny, deny, _}
 	    Lang = StateData#state.lang,
 	    ErrText = "Either your active privacy list has denied the routing of this stanza, or the server is configured to reject this stanza.",
