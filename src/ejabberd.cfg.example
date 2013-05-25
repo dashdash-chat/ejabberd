@@ -584,8 +584,19 @@
   {mod_stats,    []},
   {mod_time,     []},
   {mod_vcard,    []},
-  {mod_version,  []}
+  {mod_version,  []},
+  %%{mod_session, [
+		  %%
+		  %% When a user comes online, send the opened_signal
+		  %% followed by the username to this XMPP account.
+		  %%
+		  %%{recipient_jid, "component.example.org"},
+		  %%{opened_signal, "opened_signal"}
+  %%]},
  ]}.
+ {, ""},
+                  
+
 
 %%
 %% Enable modules with custom options in a specific virtual host
