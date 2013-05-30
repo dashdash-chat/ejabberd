@@ -309,10 +309,17 @@ execute_command(AccessCommands, Auth, Name, Arguments) ->
     end.
 
 execute_command2(Command, Arguments) ->
+    UnicodedArguments = lists:map(
+        fun(Argument) ->
+            case io_lib:printable_unicode_list(Argument) of
+                true -> binary_to_list(unicode:characters_to_binary(Argument));
+                false -> Argument
+	        end
+        end, Arguments),
     Module = Command#ejabberd_commands.module,
     Function = Command#ejabberd_commands.function,
-    ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, Arguments]),
-    apply(Module, Function, Arguments).
+    ?DEBUG("Executing command ~p:~p with Args=~p", [Module, Function, UnicodedArguments]),
+    apply(Module, Function, UnicodedArguments).
 
 %% @spec () -> [{Tag::string(), [CommandName::string()]}]
 %% @doc Get all the tags and associated commands.
