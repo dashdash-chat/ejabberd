@@ -584,7 +584,7 @@
   {mod_stats,    []},
   {mod_time,     []},
   {mod_vcard,    []},
-  {mod_version,  []},
+  {mod_version,  []}
   %%{mod_session, [
 		  %%
 		  %% When a user comes online, send the opened_signal
@@ -594,8 +594,6 @@
 		  %%{opened_signal, "opened_signal"}
   %%]},
  ]}.
- {, ""},
-                  
 
 
 %%
